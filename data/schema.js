@@ -9,6 +9,22 @@ import {
   GraphQLBoolean
 } from 'graphql';
 
+import {
+  connectionArgs,
+  forwardConnectionArgs,
+  backwardConnectionArgs,
+  connectionDefinitions,
+  connectionFromArray,
+  connectionFromPromisedArray,
+  cursorForObjectInConnection,
+  nodeDefinitions,
+  toGlobalId,
+  fromGlobalId,
+  globalIdField,
+  pluralIdentifyingRootField,
+  mutationWithClientMutationId,
+} from 'graphql-relay';
+
 let students = [
   {
     first_name: 'Bill',
@@ -130,24 +146,43 @@ let grades = [
   }
 ]
 
+var {nodeInterface, nodeField} = nodeDefinitions(
+  (globalId) => {
+    var {type, id} = fromGlobalId(globalId);
+    return data[type][id];
+  },
+  (obj) => {
+    return obj.students ? gradeType : studentType;
+  }
+)
+
+
 let gradeType = new GraphQLObjectType({
   name: "Grade",
   fields: () => ({
+    id: globalIdField(),
     student: {
-      type: studentType,
-      resolve: (obj) => {
-        return students.filter(student => student.first_name === obj.student)[0];
+      type: StudentConnection,
+      args: connectionArgs,
+      resolve: (grade, args) => {
+        console.log(grade, args);
+        return connectionFromArray(students.filter(student => student.first_name === obj.student)[0])
       }
-    },
-    course: {
-      type: courseType,
-      resolve: (obj) => {
-        return courses.filter(course => course.name === obj.course)[0];
-      }
-    },
-    grade: { type: new GraphQLNonNull(GraphQLString) }
-  })
+    }
+    // course: {
+    //   type: courseType,
+    //   resolve: (obj) => {
+    //     return courses.filter(course => course.name === obj.course)[0];
+    //   }
+    // },
+    // grade: { type: new GraphQLNonNull(GraphQLString) }
+  }),
+  interfaces: [nodeInterface]
 })
+
+// relay connection definition
+var {connectionType: StudentConnection} =
+  connectionDefinitions({nodeType: studentType});
 
 let courseType = new GraphQLObjectType({
   name: "Course",
@@ -222,7 +257,8 @@ let schema = new GraphQLSchema({
       grades: {
         type: new GraphQLList(gradeType),
         resolve: () => grades
-      }
+      },
+      node: nodeField
     })
   })
 })

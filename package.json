@@ -17,6 +17,7 @@
     "express": "~4.13.1",
     "express-graphql": "^0.4.5",
     "graphql": "^0.4.14",
+    "graphql-relay": "^0.3.5",
     "kerberos": "0.0.17",
     "mongodb": "^2.1.0",
     "morgan": "~1.6.1",
